@@ -24,6 +24,8 @@ description: The Dates Calendar smart contract.
 commands:
   compile:
     unix: brownie compile
+  install-ganache:
+    unix: npm install -g ganache-cli
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -76,5 +78,6 @@ env_specs:
     description: Development environment
     packages: 
     - python=3.8.*
+    - nodejs
     - pip: 
       - eth-brownie
