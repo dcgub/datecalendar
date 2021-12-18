@@ -79,5 +79,6 @@ env_specs:
     packages: 
     - python=3.8.*
     - nodejs=16.13.1 #LTS version
+    - spiceypy
     - pip: 
       - eth-brownie

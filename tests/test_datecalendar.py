@@ -64,4 +64,6 @@ def test_perpetual_mint(dc, accounts, chain):
         chain.sleep(24 * 60 * 60)
         dc.mintDate(today_idx, {'from': acc}) 
 
+    assert dc.balanceOf(acc) == 10
+
 

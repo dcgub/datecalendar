@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
  * @title DateCalendar contract
@@ -10,6 +11,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  * @dev Extends ERC721 Non-Fungible Token Standard basic implementation.
  */
 contract DateCalendar is ERC721 {
+
+    using SafeMath for uint256;
 
     // Unix epoch date (1970-01-01) index
     uint256 private constant _unixEpochDateIndex = 36500;
