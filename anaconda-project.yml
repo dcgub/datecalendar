@@ -78,6 +78,6 @@ env_specs:
     description: Development environment
     packages: 
     - python=3.8.*
-    - nodejs
+    - nodejs=16.13.1 #LTS version
     - pip: 
       - eth-brownie
