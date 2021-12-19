@@ -11,6 +11,9 @@ def spice_date_to_date(spice_date):
 	return date
 
 
+### ADD DATE CLASS FOR DATE IMPLEMENTATION
+
+
 start_date = '4999 B.C. Jan 1'
 end_date = '4999 A.D. Dec 31'
 
@@ -47,6 +50,29 @@ for date in all_dates:
 		year = -year
 	dates_by_year[year].append(date)
 
-# Add a Date class for our dates with str implementation
-# Make sure to run gregorian calendar tests
+# Gregorian calendar test checking leap years
+# Source: https://docs.microsoft.com/en-us/office/troubleshoot/excel/determine-a-leap-year
+for year, dates in dates_by_year.items():
+	# For negative years, logic still applies
+	# but year needs to be shifted by 1
+	if year < 0:
+		year = year + 1
+	is_leap = False
+	div_4 = not year % 4
+	if div_4:
+		div_100 = not year % 100
+		if not div_100:
+			is_leap = True
+		else:
+			div_400 = not year % 400
+			if div_400:
+				is_leap = True
+	if is_leap:
+		assert len(dates) == 366
+	else:
+		assert len(dates) == 365
+
+
+
+
 
