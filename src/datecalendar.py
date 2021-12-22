@@ -3,12 +3,12 @@ This module implements the core concepts of the
 DateCalendar.sol smart contract.
 
 Dates in the calendar are as of 00:00 UT (Universal Time).
-The date token index is the unique identifier used to keep 
+The Date Token Index (DTI) is the unique identifier used to keep 
 track of the date tokens in the smart contract and 
 represents the relative positioning of all possible dates 
 in the calendar.
 
-Date token index 
+DTI
 
 0                                 2**256 -1
 |---------------------------------|
@@ -35,16 +35,16 @@ day fraction of +0.5.
 
 DateCalendar links date token indices to JDs
 by setting the midpoint of the index to the
-JD of -0.5 (JDN of -1 and day fraction of 0.5).
+JD of 0.5 (JDN of 0 and day fraction of 0.5).
 
-Date token index 
+DTI 
 
 0                2**255            2**256-1
 |----------------|-----------------|
 
 JD=(JDN, day fraction)
 
-(-2**255, 0.5 )  (-1, 0.5)         (2**255, 0.5)
+(-2**255, 0.5 )  (0, 0.5)         (2**255-1, 0.5)
 |----------------|-----------------|
 
 When a token is minted, the DateCalendar
@@ -85,44 +85,67 @@ This module contains various utilities
 to convert to and from the various date
 representations: date token index, Julian Date, 
 Julian calendar date, Gregorian calendar date.
+Many of these utilities were created using the
+algorithmns outlined and developed by Peter Baum.
 """
+from __future__ import annotations
+
+from collections import namedtuple
 from typing import Any, Tuple
 
-def get_int_bounds(type_str: str) -> Tuple[int, int]:
-    """
-    Returns the lower and upper bound for an integer type.
+class SolidityInt(int):
 
-    References
-    ----------
-    [1] https://pypi.org/project/eth-brownie/ `brownie.convert.utils`
-    """
-    size = int(type_str.strip("uint") or 256)
-    if size < 8 or size > 256 or size % 8:
-        raise ValueError(f"Invalid type: {type_str}")
-
-    if type_str.startswith("u"):
-        return 0, 2 ** size - 1
-
-    return -(2 ** (size - 1)), 2 ** (size - 1) - 1
-
-
-class AbstractSolidityInt(int):
+    SOLIDITY_TYPE = 'int'
 
     def __new__(cls, value: Any) -> int:
-        dti = super().__new__(cls, value)
-        lower, upper = get_int_bounds(cls.SOLIDITY_TYPE)
-        if dti < lower or dti > upper:
-            raise OverflowError(f"{value} is outside allowable range for DateTokenIndex")
+        inst = super().__new__(cls, value)
+        lower, upper = cls.get_int_bounds()
+        if inst < lower or inst > upper:
+            raise OverflowError(f"{value} is outside allowable range for {cls.SOLIDITY_TYPE}")
 
-        return dti
+        return inst
 
-class uint16(AbstractSolidityInt):
+    @classmethod
+    def get_int_bounds(cls) -> Tuple[int, int]:
+        """
+        Returns the lower and upper bound for an integer type.
+
+        References
+        ----------
+        [1] https://pypi.org/project/eth-brownie/ `brownie.convert.utils`
+        """
+        type_str = cls.SOLIDITY_TYPE
+        size = int(type_str.strip('uint') or 256)
+        if size < 8 or size > 256 or size % 8:
+            raise ValueError(f'Invalid type: {type_str}')
+
+        if type_str.startswith('u'):
+            return 0, 2 ** size - 1
+
+        return -(2 ** (size - 1)), 2 ** (size - 1) - 1
+
+    @classmethod
+    def get_midpoint_value(cls) -> int:
+        """
+        Retrieve the value of this type that sits
+        at the midpoint between the upper
+        and lower integer bounds. If there is
+        a tie, the value returned is to the right
+        of the midpoint.
+        """
+        lower, upper = cls.get_int_bounds()
+        return ((upper - lower) + 1) // 2 + lower
+
+class uint8(SolidityInt):
+    SOLIDITY_TYPE = 'uint8'
+
+class uint16(SolidityInt):
     SOLIDITY_TYPE = 'uint16'
 
-class uint256(AbstractSolidityInt):
+class uint256(SolidityInt):
     SOLIDITY_TYPE = 'uint256'
 
-class int256(AbstractSolidityInt):
+class int256(SolidityInt):
     SOLIDITY_TYPE = 'int256'
 
 class DateTokenIndex(uint256):
@@ -132,9 +155,30 @@ class DateTokenIndex(uint256):
     represents the relative positioning of all possible dates 
     in the calendar.
     """
-    pass
+    # Store at class level to avoid recalculating
+    MIDPOINT = uint256.get_midpoint_value()
 
-class JulianDate(namedtuple('JulianDate', ['julian_day_number' ,'day_fraction'])):
+    @classmethod
+    def from_jd(cls, jd: JulianDate) -> DateTokenIndex:
+        """
+        Create a Date Token Index from a Julian date.
+
+        The `day_fraction` of the Julian date will be
+        ignored.
+        """
+        dti_mid = cls.MIDPOINT
+        return DateTokenIndex(jd.jdn + dti_mid)
+
+    def to_jd(self) -> JulianDate:
+        """
+        Convert a DTI to a Julian date.
+        """
+        return JulianDate.from_dti(self)
+
+
+_JulianDate = namedtuple('JulianDate', ['jdn' ,'day_fraction'])
+
+class JulianDate(_JulianDate):
     """
     A Julian Date (JD) is composed
     of two pieces, the Julian Day Number (JDN)
@@ -142,31 +186,48 @@ class JulianDate(namedtuple('JulianDate', ['julian_day_number' ,'day_fraction'])
 
     Attributes
     ----------
-    julian_day_number: :obj:`int256`
-        Integer describing the number of solar days
+    jdn: :obj:`int256`
+        Julian Day Number. Integer describing the number of solar days
         between the given day and a fixed day in history starting
-        from 12:00 UT (noon)
+        from 12:00 UT (noon).
     day_fraction: :obj:`uint16`
         Integer describing the value the day faction.
         Since the day fraction is between 0 and 1,
         `day_fracion` should be interpreted as the
         number after the decimal point. I.e.
-        5 means 0.5. 51 mean 0.51
+        5 means 0.5. 51 mean 0.51.
 
     """
 
+    def __new__(cls, jdn: int256, day_fraction: uint16):
+        return super(JulianDate, cls).__new__(cls, 
+                                              jdn=int256(jdn), 
+                                              day_fraction=uint16(day_fraction))
+
     @classmethod
-    def from_dti(self, dti: DateTokenIndex):
-        pass
+    def from_dti(cls, dti: DateTokenIndex) -> JulianDate:
+        """
+        Create a Julian date from a Date Token Index.
+        """
+        dti_mid = DateTokenIndex.MIDPOINT
+        return JulianDate(jdn=dti - dti_mid,
+                          day_fraction=5)
+
     
-    def to_float(self):
+    def to_dti(self) -> DateTokenIndex:
+        """
+        Convert the JD to a Date Token Index.
+        """
+        return DateTokenIndex.from_jd(self)
+    
+    def to_float(self) -> float:
         """
         Convert the JD to a floating
         point. This will run into floating point
         representation issues for large
-        `julian_day_number` values.
+        `jdn` values.
         """
-        jdn = self.julian_day_number
+        jdn = self.jdn
         df = self.day_fraction
 
         num_digits = len(str(df))
@@ -175,97 +236,211 @@ class JulianDate(namedtuple('JulianDate', ['julian_day_number' ,'day_fraction'])
         return jdn + df
 
 
-from collections import namedtuple
-import math
+_CalendarDate = namedtuple('CalendarDate', ['day_of_week' ,'day',
+                                            'month', 'year'])
 
-INT256_MAX = 2**255 - 1
+class CalendarDate(_CalendarDate):
+    """
+    Representation of a date in
+    a modern calendar.
 
-# Furthest number of days we can
-# lookback in time
-MAX_LOOKBACK = INT256_MAX
+    Attributes
+    ----------
+    day_of_week: :obj:`uint8`
+        Integer from 0 to 6 indicating
+        the day of the week, with 0 being Sunday,
+        1 being Monday, etc.
+    day: :obj:`uint8`
+        Integer from 1 to 31 indicating the
+        day of the month.
+    month: :obj:`uint8`
+        Integer from 1 to 12 indicating the
+        month of the year.
+    year: :obj:`int256`
+        Signed integer for the year. The year
+        before 1 is 0, and the year before 0 is -1, etc.
+        A year of 1 is 1 CE, a year of 0 is 1 BCE, 
+        a year of -1 is 2 BCE, etc.
+    """
 
-# This DCI is the index of
-# '4713-01-01 BCE JCal' @00:00 UT.
-# This index is the starting point
-# for Julian Calendar Dates. Prior
-# to this, dates are presented as Julian Dates.
-# '4713-01-01 BCE JCal' @12:00 UT (noon) has
-# a Julian Date equal to 0.0.
-JCAL_START_DCI = MAX_LOOKBACK
+    DAYS_OF_WEEK = (
+        'Sunday',
+        'Monday', 'Tuesday', 'Wednesday',
+        'Thursday', 'Friday', 'Saturday', 
+    )
 
-class JulianDate(namedtuple('JulianDate', 'jdn day_fraction')):
-    # The amount to subtract from a Julian Date
-    # to aconvert it from 12:00 UT to 00:00 UT.
-    HALF_DAY = 0.5
+    MONTHS = (
+        'January', 'February', 'March',
+        'April', 'May', 'June',
+        'July', 'August', 'September',
+        'October', 'November', 'December'
+    )
 
-def dci_to_jd(dci):
-    return JulianDate(dci - JCAL_START_DCI, -JulianDate.HALF_DAY)
+    def __new__(cls, day_of_week: uint8, day: uint8,
+                month: uint8, year: int256):
+        return super(CalendarDate, cls).__new__(cls, 
+                                                day_of_week=uint8(day_of_week), 
+                                                day=uint8(day),
+                                                month=uint8(month),
+                                                year=int256(year))
 
-def jd_to_dci(jd):
-    return jd.jdn + JCAL_START_DCI
+    def __str__(self):
+        dow = self.DAYS_OF_WEEK[self.day_of_week]
+        d = self.day
+        m = self.MONTHS[self.month - 1]
+        y = self.year
+        era = ''
+        if y <= 0:
+            era = 'BCE'
+            y = -y + 1
+        else:
+            era = 'CE'
+        return f'{dow} {d} {m} {y} {era}'
 
-TO_JD_HELPER = tuple([
-    306, 337, 0, 31, 
-    61, 92, 122, 153, 
-    184, 214, 245, 275
-])
+    def __repr__(self):
+        return self.__str__()
 
-def gcal_to_jd(y, m, d):
-    if m < 3:
-        z = y - 1
-    else:
-        z = y
-    f = TO_JD_HELPER[m-1]
-    p1 = math.floor(z / 4)
-    p2 = math.floor(z / 100)
-    p3 = math.floor(z / 400)
-    jdn = d + f + 365 * z + p1 - p2 + p3 + 1721119
-    return JulianDate(jdn, -JulianDate.HALF_DAY)
+class GCalDate(CalendarDate):
 
-def gcal_to_jd(Y,M,D):
-    """Gregorian to Julian Day Number Calculation"""
-    if M<3:
-        M+=12
-        Y-=1
-    return(D + int((153 * M - 457) / 5) + 365 * Y + Y // 4 - Y // 100 + Y // 400 + 1721118.5)
+    @classmethod
+    def from_jd(cls, jd: JulianDate) -> GCalDate:
+        """
+        Create a Gregorian calendar date
+        from a Julian Date.
 
-TO_GCAL_HELPER = tuple([
-    0, 31, 61, 92, 
-    122, 153, 184, 214, 
-    245, 275, 306, 337
-])
+        References
+        ----------
+        [1] P. Baum, "Date Algorithms", 2020.
+        """
+        pass
 
-def jd_to_gcal(jd):
-    z = jd.jdn - 1721119
-    r =  0
-    k1 = k2 = 25
-    a = (z*100 - k1) // 3652425
-    y = (z*100 - k2 + a*100 - a // 4 * 100) // 36525
-    c = z + a - a // 4 - (36525 * y) // 100
-    m = int((5 * c +456) / 153)
-    f = TO_GCAL_HELPER[m-3]
-    d = c - f + r
-    if m > 12:
-        y += 1
-        m -= 12
-    return y, m, d
+    def to_jd(self) -> JulianDate:
+        """
+        Convert the Gregorian calendar date
+        to a Julian Date.
+
+        References
+        ----------
+        [1] P. Baum, "Date Algorithms", 2020.
+        """
+        pass
+
+class JCalDate(CalendarDate):
+
+    @classmethod
+    def from_jd(cls, jd: JulianDate) -> JCalDate:
+        """
+        Create a Julian calendar date
+        from a Julian Date.
+
+        References
+        ----------
+        [1] P. Baum, "Date Algorithms", 2020.
+        """
+        pass
+
+    def to_jd(self) -> JulianDate:
+        """
+        Convert the Julian calendar date
+        to a Julian Date.
+
+        References
+        ----------
+        [1] P. Baum, "Date Algorithms", 2020.
+        """
+        pass
 
 
-def jd_to_gcal(jd):
-    JDN = jd.jdn + jd.day_fraction
-    """Julian Day Number to Gregorian Date"""
-    T=JDN - 1721118.5
-    Z = T//1
-    R = T - Z
-    G = Z - .25
-    A = G // 36524.25
-    B = A - A // 4
-    year = int((B+G) // 365.25)
-    C = B + Z - (365.25 * year)//1
-    month = int((5 * C + 456) / 153)
-    day = C - int((153 * month - 457) // 5) + R
-    if month > 12:
-        year+=1
-        month-=12
-    return year, month, day
+# import math
+
+# INT256_MAX = 2**255 - 1
+
+# # Furthest number of days we can
+# # lookback in time
+# MAX_LOOKBACK = INT256_MAX
+
+# # This DCI is the index of
+# # '4713-01-01 BCE JCal' @00:00 UT.
+# # This index is the starting point
+# # for Julian Calendar Dates. Prior
+# # to this, dates are presented as Julian Dates.
+# # '4713-01-01 BCE JCal' @12:00 UT (noon) has
+# # a Julian Date equal to 0.0.
+# JCAL_START_DCI = MAX_LOOKBACK
+
+# class JulianDate(namedtuple('JulianDate', 'jdn day_fraction')):
+#     # The amount to subtract from a Julian Date
+#     # to aconvert it from 12:00 UT to 00:00 UT.
+#     HALF_DAY = 0.5
+
+# def dci_to_jd(dci):
+#     return JulianDate(dci - JCAL_START_DCI, -JulianDate.HALF_DAY)
+
+# def jd_to_dci(jd):
+#     return jd.jdn + JCAL_START_DCI
+
+# TO_JD_HELPER = tuple([
+#     306, 337, 0, 31, 
+#     61, 92, 122, 153, 
+#     184, 214, 245, 275
+# ])
+
+# def gcal_to_jd(y, m, d):
+#     if m < 3:
+#         z = y - 1
+#     else:
+#         z = y
+#     f = TO_JD_HELPER[m-1]
+#     p1 = math.floor(z / 4)
+#     p2 = math.floor(z / 100)
+#     p3 = math.floor(z / 400)
+#     jdn = d + f + 365 * z + p1 - p2 + p3 + 1721119
+#     return JulianDate(jdn, -JulianDate.HALF_DAY)
+
+# def gcal_to_jd(Y,M,D):
+#     """Gregorian to Julian Day Number Calculation"""
+#     if M<3:
+#         M+=12
+#         Y-=1
+#     return(D + int((153 * M - 457) / 5) + 365 * Y + Y // 4 - Y // 100 + Y // 400 + 1721118.5)
+
+# TO_GCAL_HELPER = tuple([
+#     0, 31, 61, 92, 
+#     122, 153, 184, 214, 
+#     245, 275, 306, 337
+# ])
+
+# def jd_to_gcal(jd):
+#     z = jd.jdn - 1721119
+#     r =  0
+#     k1 = k2 = 25
+#     a = (z*100 - k1) // 3652425
+#     y = (z*100 - k2 + a*100 - a // 4 * 100) // 36525
+#     c = z + a - a // 4 - (36525 * y) // 100
+#     m = int((5 * c +456) / 153)
+#     f = TO_GCAL_HELPER[m-3]
+#     d = c - f + r
+#     if m > 12:
+#         y += 1
+#         m -= 12
+#     return y, m, d
+
+
+# def jd_to_gcal(jd):
+#     JDN = jd.jdn + jd.day_fraction
+#     """Julian Day Number to Gregorian Date"""
+#     T=JDN - 1721118.5
+#     Z = T//1
+#     R = T - Z
+#     G = Z - .25
+#     A = G // 36524.25
+#     B = A - A // 4
+#     year = int((B+G) // 365.25)
+#     C = B + Z - (365.25 * year)//1
+#     month = int((5 * C + 456) / 153)
+#     day = C - int((153 * month - 457) // 5) + R
+#     if month > 12:
+#         year+=1
+#         month-=12
+#     return year, month, day
 

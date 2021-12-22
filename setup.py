@@ -1,5 +1,5 @@
 from glob import glob
-from os.path import basename
+from os.path import basename, splitext
 
 from setuptools import setup, find_packages
 from version import get_version, get_build_number
