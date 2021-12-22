@@ -8,7 +8,7 @@
 #
 # Set the 'name' key to name your project
 #
-name: datescalendar
+name: datecalendar
 #
 # Set the 'icon' key to give your project an icon
 #
@@ -16,7 +16,7 @@ icon:
 #
 # Set the 'description' key to a one-liner summary
 #
-description: The Dates Calendar smart contract.
+description: The DateCalendar smart contract.
 #
 # In the commands section, list your runnable scripts, notebooks, and other code.
 # Use `anaconda-project add-command` to add commands.
@@ -26,6 +26,10 @@ commands:
     unix: brownie compile
   install-ganache:
     unix: npm install -g ganache-cli
+  install-dev:
+    unix: python -m pip install -e .
+  dev-nb:
+    unix: jupyter notebook dev.ipynb
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -80,5 +84,6 @@ env_specs:
     - python=3.8.*
     - nodejs=16.13.1 #LTS version
     - spiceypy
+    - jupyter
     - pip: 
       - eth-brownie

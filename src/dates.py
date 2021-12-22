@@ -228,8 +228,7 @@ def gcal2jd2(year, month, day):
 
 def gcal2jd2(year, month, date):
 	# https://www.hermetic.ch/cal_stud/jdn.htm
-	if month 
-	a = 
+	pass
 
 
 
