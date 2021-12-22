@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
  * 
  * @dev Extends ERC721 Non-Fungible Token Standard basic implementation.
  */
-contract DateCalendar is ERC721, Ownable {
+contract DateCalendarHype is ERC721, Ownable {
 
     using SafeMath for uint256;
 
@@ -134,31 +134,6 @@ contract DateCalendar is ERC721, Ownable {
 
         _safeMint(msg.sender, dateIndex);
 
-
     }
-
-    uint16[12] private _toJDHelper = [306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275];
-
-    /**
-     * @dev Test.
-     */    
-    function gcal_to_jd(int256 y, uint8 m, int8 d) public view returns (int256) {
-        if (m < 3) {
-            y -= 1;
-        }
-        int16 f = int16(_toJDHelper[m-1]);
-        int256 p1 = y / 4;
-        int256 p2 = y / 100;
-        int256 p3 = y / 400;
-        if (y < 0) {
-            p1 -= 1;
-            p2 -= 1;
-            p3 -= 1;
-        }
-
-        int256 jdn = d + f + 365 * y + p1 - p2 + p3 + 1721119;
-        return jdn;
-
-     }
 
 }
