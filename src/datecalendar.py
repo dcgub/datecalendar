@@ -92,6 +92,9 @@ from __future__ import annotations
 
 from collections import namedtuple
 from typing import Any, Tuple
+import datetime
+
+from dateutil.parser import parse as parse_dt_string
 
 class SolidityInt(int):
 
@@ -235,6 +238,12 @@ class JulianDate(_JulianDate):
 
         return jdn + df
 
+    def to_gcal_date(self) -> GCalDate:
+        return GCalDate.from_jd(self)
+
+    def to_jcal_date(self) -> GCalDate:
+        return JCalDate.from_jd(self)
+
 
 _CalendarDate = namedtuple('CalendarDate', ['day_of_week' ,'day',
                                             'month', 'year'])
@@ -300,7 +309,42 @@ class CalendarDate(_CalendarDate):
     def __repr__(self):
         return self.__str__()
 
+    @classmethod
+    def from_string(cls, value: str) -> CalendarDate:
+        """
+        Create a calendar date from a string.
+        """
+        dt = parse_dt_string(value)
+        return cls.from_datetime(dt)
+
+    @classmethod
+    def from_datetime(cls, dt: datetime.datetime) -> CalendarDate:
+        """
+        Create a calendar date from a Python datetime.
+        """
+        _cd = cls(day_of_week=0, #dummy placeholder
+                  day=dt.day,
+                  month=dt.month,
+                  year=dt.year)
+        dow = cls.day_of_week_from_jd(_cd.to_jd())
+        return cls(day_of_week=dow,
+                   day=dt.day,
+                   month=dt.month,
+                   year=dt.year)
+
 class GCalDate(CalendarDate):
+
+    _FROM_JD_HELPER = (
+        0, 31, 61, 92, 
+        122, 153, 184, 214, 
+        245, 275, 306, 337
+    )
+
+    _TO_JD_HELPER = (
+        306, 337, 0, 31, 
+        61, 92, 122, 153, 
+        184, 214, 245, 275
+    )
 
     @classmethod
     def from_jd(cls, jd: JulianDate) -> GCalDate:
@@ -312,7 +356,36 @@ class GCalDate(CalendarDate):
         ----------
         [1] P. Baum, "Date Algorithms", 2020.
         """
-        pass
+        z = jd.jdn - 1721118
+        k = 25
+        a = (z*100 - k) // 3652425
+        y = (z*100 - k + a*100 - a // 4 * 100) // 36525
+        c = z + a - a // 4 - (36525 * y) // 100
+        m = int((5 * c +456) / 153)
+        f = cls._FROM_JD_HELPER[m-3]
+        d = c - f 
+        if m > 12:
+            y += 1
+            m -= 12
+        dow = cls.day_of_week_from_jd(jd)
+        return cls(day_of_week=dow,
+                   day=d,
+                   month=m,
+                   year=y)
+
+    @classmethod
+    def day_of_week_from_jd(cls, jd: JulianDate) -> uint8:
+        """
+        Calculate the day of week for a given
+        JD.
+
+        References
+        ----------
+        [1] P. Baum, "Date Algorithms", 2020.
+        [2] J. Meeus, "Astronomical Algorithms", pp. 65, 1998.        
+        """
+        return int((jd.jdn + 2) % 7)
+
 
     def to_jd(self) -> JulianDate:
         """
@@ -323,7 +396,20 @@ class GCalDate(CalendarDate):
         ----------
         [1] P. Baum, "Date Algorithms", 2020.
         """
-        pass
+        d = self.day
+        m = self.month
+        y = self.year
+        if m < 3:
+            z = y - 1
+        else:
+            z = y
+        f = self._TO_JD_HELPER[m-1]
+        p1 = z // 4
+        p2 = z // 100
+        p3 = z // 400
+        jdn = d + f + 365 * z + p1 - p2 + p3 + 1721118
+        return JulianDate(jdn=jdn,
+                          day_fraction=5)
 
 class JCalDate(CalendarDate):
 
@@ -337,7 +423,35 @@ class JCalDate(CalendarDate):
         ----------
         [1] P. Baum, "Date Algorithms", 2020.
         """
-        pass
+        z = jd.jdn - 1721116
+        k = 25
+        a = (z*100 - k) // 3652425
+        y = (z*100 - k) // 36525
+        c = z - (36525 * y) // 100
+        m = int((5 * c +456) / 153)
+        f = GCalDate._FROM_JD_HELPER[m-3]
+        d = c - f 
+        if m > 12:
+            y += 1
+            m -= 12
+        dow = cls.day_of_week_from_jd(jd)
+        return cls(day_of_week=dow,
+                   day=d,
+                   month=m,
+                   year=y)
+
+    @classmethod
+    def day_of_week_from_jd(cls, jd: JulianDate) -> uint8:
+        """
+        Calculate the day of week for a given
+        JD.
+
+        References
+        ----------
+        [1] P. Baum, "Date Algorithms", 2020.
+        [2] J. Meeus, "Astronomical Algorithms", pp. 65, 1998.        
+        """
+        return GCalDate.day_of_week_from_jd(jd)
 
     def to_jd(self) -> JulianDate:
         """
@@ -348,7 +462,20 @@ class JCalDate(CalendarDate):
         ----------
         [1] P. Baum, "Date Algorithms", 2020.
         """
-        pass
+        d = self.day
+        m = self.month
+        y = self.year
+        if m < 3:
+            z = y - 1
+        else:
+            z = y
+        f = GCalDate._TO_JD_HELPER[m-1]
+        p1 = z // 4
+        p2 = z // 100
+        p3 = z // 400
+        jdn = d + f + 365 * z + p1 + 1721116
+        return JulianDate(jdn=jdn,
+                          day_fraction=5)
 
 
 # import math

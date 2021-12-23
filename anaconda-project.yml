@@ -87,3 +87,4 @@ env_specs:
     - jupyter
     - pip: 
       - eth-brownie
+      - python-dateutil
