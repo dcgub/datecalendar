@@ -30,6 +30,10 @@ commands:
     unix: python -m pip install -e .
   dev-nb:
     unix: jupyter notebook dev.ipynb
+  run-py-tests:
+    unix: pytest tests/py -m "not slow"
+  run-all-py-tests:
+    unix: pytest tests/py -m
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -82,9 +86,11 @@ env_specs:
     description: Development environment
     packages: 
     - python=3.8.*
+    - jupyter
     - nodejs=16.13.1 #LTS version
     - spiceypy
-    - jupyter
     - pip: 
       - eth-brownie
+      - jdcal
       - python-dateutil
+      - web3
