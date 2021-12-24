@@ -411,6 +411,15 @@ class GCalDate(CalendarDate):
         return JulianDate(jdn=jdn,
                           day_fraction=5)
 
+    def to_jcal_date(self) -> JCalDate:
+        """
+        Convert the Gregorian calendar date
+        to the equivalent Julian
+        calendar date. They both have
+        the same Julian Date.
+        """
+        return self.to_jd().to_jcal_date()
+
     @property
     def leap_year(self) -> bool:
         """
@@ -490,6 +499,15 @@ class JCalDate(CalendarDate):
         jdn = d + f + 365 * z + p1 + 1721116
         return JulianDate(jdn=jdn,
                           day_fraction=5)
+
+    def to_gcal_date(self) -> GCalDate:
+        """
+        Convert the Julian calendar date
+        to the equivalent Gregorian
+        calendar date. They both have
+        the same Julian Date.
+        """
+        return self.to_jd().to_gcal_date()
 
     @property
     def leap_year(self) -> bool:

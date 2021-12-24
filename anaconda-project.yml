@@ -33,7 +33,7 @@ commands:
   run-py-tests:
     unix: pytest tests/py -m "not slow"
   run-all-py-tests:
-    unix: pytest tests/py -m
+    unix: pytest tests/py
 
 #
 # In the variables section, list any environment variables your code depends on.
