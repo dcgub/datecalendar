@@ -7,7 +7,7 @@ import spiceypy as sp
 from collections import defaultdict
 
 def test_dti():
-	lower, upper = dc.uint256.get_int_bounds()
+	lower, upper = dc.DateTokenIndex.get_int_bounds()
 
 	# DTI works at upper and lower bounds
 	# but breaks beyond that point
@@ -22,7 +22,7 @@ def test_dti():
 
 
 def test_jd():
-	lower, upper = dc.int256.get_int_bounds()
+	lower, upper = dc.JDN.get_int_bounds()
 
 	# DTI works at upper and lower bounds
 	# but breaks beyond that point
@@ -37,8 +37,8 @@ def test_jd():
 
 
 def test_dti_jd():
-	ulower, uupper = dc.uint256.get_int_bounds()
-	ilower, iupper = dc.int256.get_int_bounds()
+	ulower, uupper = dc.DateTokenIndex.get_int_bounds()
+	ilower, iupper = dc.JDN.get_int_bounds()
 
 	dti = dc.DateTokenIndex(ulower)
 	assert dti.to_jd().to_dti() == dti
@@ -50,7 +50,7 @@ def test_dti_jd():
 
 	dti = dc.DateTokenIndex(dc.DateTokenIndex.MIDPOINT)
 	assert dti.to_jd().to_dti() == dti
-	assert dti.to_jd() == dc.JulianDate(dc.int256.get_midpoint_value(), 5)
+	assert dti.to_jd() == dc.JulianDate(dc.JDN.get_midpoint_value(), 5)
 
 	dti_mid = dc.DateTokenIndex(dc.DateTokenIndex.MIDPOINT)
 	for i in range(-10, 10):
@@ -124,7 +124,7 @@ def test_gcal_additions():
 	assert gcal.year == -4713
 
 def test_gcal_bounds():
-	ulower, uupper = dc.uint256.get_int_bounds()
+	ulower, uupper = dc.DateTokenIndex.get_int_bounds()
 
 	jdl = dc.DateTokenIndex(ulower).to_jd()
 	gcall = jdl.to_gcal_date()
@@ -139,11 +139,11 @@ def test_gcal_bounds():
 		assert m == gcal.month
 		assert d + i == gcal.day
 
-	jd = dc.DateTokenIndex(ulower + 365).to_jd()
+	jd = dc.DateTokenIndex(ulower + 365.25).to_jd()
 	gcal = jd.to_gcal_date()
 	assert y + 1 == gcal.year
 
-	jd = dc.DateTokenIndex(ulower + 365 * 10).to_jd()
+	jd = dc.DateTokenIndex(ulower + 365.25 * 10).to_jd()
 	gcal = jd.to_gcal_date()
 	assert y + 10 == gcal.year
 
@@ -160,11 +160,11 @@ def test_gcal_bounds():
 		assert m == gcal.month
 		assert d - i == gcal.day
 
-	jd = dc.DateTokenIndex(uupper - 365).to_jd()
+	jd = dc.DateTokenIndex(uupper - 365.25).to_jd()
 	gcal = jd.to_gcal_date()
 	assert y - 1 == gcal.year
 
-	jd = dc.DateTokenIndex(uupper - 365 * 10).to_jd()
+	jd = dc.DateTokenIndex(uupper - 365.25 * 10).to_jd()
 	gcal = jd.to_gcal_date()
 	assert y - 10 == gcal.year
 
@@ -232,7 +232,7 @@ def test_jcal_additions():
 	assert jcal.year == -4712
 
 def test_jcal_bounds():
-	ulower, uupper = dc.uint256.get_int_bounds()
+	ulower, uupper = dc.DateTokenIndex.get_int_bounds()
 
 	jdl = dc.DateTokenIndex(ulower).to_jd()
 	jcall = jdl.to_jcal_date()
@@ -247,14 +247,18 @@ def test_jcal_bounds():
 		assert m == jcal.month
 		assert d + i == jcal.day
 
-	jd = dc.DateTokenIndex(ulower + 365).to_jd()
+	jd = dc.DateTokenIndex(ulower + 365.25).to_jd()
 	jcal = jd.to_jcal_date()
 	assert y + 1 == jcal.year
 
-	jd = dc.DateTokenIndex(ulower + 365 * 10).to_jd()
+	jd = dc.DateTokenIndex(ulower + 365.25 * 10).to_jd()
 	jcal = jd.to_jcal_date()
 	assert y + 10 == jcal.year
 
+
+	# Date at uupper in jan 2, so we will subtract
+	# 3 days for this test
+	uupper -= 3
 	jdl = dc.DateTokenIndex(uupper).to_jd()
 	jcall = jdl.to_jcal_date()
 	y = jcall.year
@@ -268,16 +272,16 @@ def test_jcal_bounds():
 		assert m == jcal.month
 		assert d - i == jcal.day
 
-	jd = dc.DateTokenIndex(uupper - 365).to_jd()
+	jd = dc.DateTokenIndex(uupper - 365.25).to_jd()
 	jcal = jd.to_jcal_date()
 	assert y - 1 == jcal.year
 
-	jd = dc.DateTokenIndex(uupper - 365 * 10).to_jd()
+	jd = dc.DateTokenIndex(uupper - 365.25 * 10).to_jd()
 	jcal = jd.to_jcal_date()
 	assert y - 10 == jcal.year
 
 
-ulower, uupper = dc.uint256.get_int_bounds()
+ulower, uupper = dc.DateTokenIndex.get_int_bounds()
 ylower = dc.DateTokenIndex(ulower).to_jd().to_gcal_date().year
 yupper = dc.DateTokenIndex(uupper).to_jd().to_gcal_date().year
 test_gcal_generation_data = [

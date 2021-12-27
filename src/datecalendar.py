@@ -10,13 +10,13 @@ in the calendar.
 
 DTI
 
-0                                 2**256 -1
-|---------------------------------|
+0                                                40*10**9*365.25
+|------------------------------------------------|
 
 Since the difference between two date token indices
 represents the number of times an entire day has passed
 in UT, all potential dates in the calendar span over
-Vigintillion years (>> 10**63). For context, the
+40 billion years (40*10**9). For context, the
 age of the universe is assumed to be roughly
 14 billion years (14*10**9).
 
@@ -39,13 +39,13 @@ JD of 0.5 (JDN of 0 and day fraction of 0.5).
 
 DTI 
 
-0                2**255            2**256-1
-|----------------|-----------------|
+0                       20*10**9*365.25          40*10**9*365.25
+|-----------------------|------------------------|
 
 JD=(JDN, day fraction)
 
-(-2**255, 0.5 )  (0, 0.5)         (2**255-1, 0.5)
-|----------------|-----------------|
+(-20*10**9*365.25, 0.5 ) (0, 0.5)                (20*10**9*365.25, 0.5)
+|-----------------------|------------------------|
 
 When a token is minted, the DateCalendar
 smart contract simultaneously assigns
@@ -159,7 +159,11 @@ class DateTokenIndex(uint256):
     in the calendar.
     """
     # Store at class level to avoid recalculating
-    MIDPOINT = uint256.get_midpoint_value()
+    MIDPOINT = 20*10**9*365.25
+
+    @classmethod
+    def get_int_bounds(cls) -> Tuple[int, int]:
+        return (0, 40*10**9*365.25)
 
     @classmethod
     def from_jd(cls, jd: JulianDate) -> DateTokenIndex:
@@ -179,6 +183,13 @@ class DateTokenIndex(uint256):
         return JulianDate.from_dti(self)
 
 
+class JDN(int256):
+
+    @classmethod
+    def get_int_bounds(cls) -> Tuple[int, int]:
+        return (-20*10**9*365.25, 20*10**9*365.25)    
+
+
 _JulianDate = namedtuple('JulianDate', ['jdn' ,'day_fraction'])
 
 class JulianDate(_JulianDate):
@@ -189,7 +200,7 @@ class JulianDate(_JulianDate):
 
     Attributes
     ----------
-    jdn: :obj:`int256`
+    jdn: :obj:`JDN`
         Julian Day Number. Integer describing the number of solar days
         between the given day and a fixed day in history starting
         from 12:00 UT (noon).
@@ -202,9 +213,9 @@ class JulianDate(_JulianDate):
 
     """
 
-    def __new__(cls, jdn: int256, day_fraction: uint16):
+    def __new__(cls, jdn: JDN, day_fraction: uint16):
         return super(JulianDate, cls).__new__(cls, 
-                                              jdn=int256(jdn), 
+                                              jdn=JDN(jdn), 
                                               day_fraction=uint16(day_fraction))
 
     @classmethod
@@ -322,15 +333,26 @@ class CalendarDate(_CalendarDate):
         """
         Create a calendar date from a Python datetime.
         """
+        dow = cls.day_of_week_from_jd(_cd.to_jd())
+        return cls.from_dmy(day=dt.day,
+                            month=dt.month,
+                            year=dt.year)
+
+    @classmethod
+    def from_dmy(cls, day: uint8, month: uint8, year: int256) -> CalendarDate:
+        """
+        Create a calendar date by providing only the day,
+        month and year.
+        """
         _cd = cls(day_of_week=0, #dummy placeholder
-                  day=dt.day,
-                  month=dt.month,
-                  year=dt.year)
+                  day=day,
+                  month=month,
+                  year=year)
         dow = cls.day_of_week_from_jd(_cd.to_jd())
         return cls(day_of_week=dow,
-                   day=dt.day,
-                   month=dt.month,
-                   year=dt.year)
+                   day=day,
+                   month=month,
+                   year=year)        
 
 class GCalDate(CalendarDate):
 

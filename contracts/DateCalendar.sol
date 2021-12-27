@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title DateCalendar contract
@@ -12,80 +13,111 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
  * @dev Extends ERC721 Non-Fungible Token Standard basic implementation.
  */
 contract DateCalendar is ERC721, Ownable {
+    /**
+     * @dev Emitted when `dateTokenIndex` token's `GCalDate` proof has been 
+     * created and saved to contract. This event will contain the
+     * variables of the `GCalDate`
+     */
+    event DateProof(uint256 indexed dateTokenIndex, 
+                    uint8 indexed day_of_week, 
+                    uint8 indexed day, 
+                    uint8 indexed month, 
+                    int256 indexed year);
 
-    using SafeMath for uint256;
+    using Strings for uint256;
+    using SafeCast for uint256;
 
-    // Unix epoch date (1970-01-01) index
-    uint256 private constant _unixEpochDateIndex = 36500;
+    // Base URI for the Date Calendar contract
+    string private _baseDCURI;
 
-    // The blockDateIndex upon contract launch
-    uint256 public launchBlockDateIndex;
+    // Flag indicating whether future dates can be minted.
+    bool public allowFutureDates;
+
+    // Midpoint value of the Date Token Index (DTI) range
+    uint256 private constant _dtiMidpoint = 7305000000000;
 
     /**
-     * @dev Epoch has a `startDateIndex` and `endDateIndex`,
-     * which represent the boundaries of the epoch time interval.
-     * A date index belongs in the epoch if it is within the intervel.
-     * The interval is closed: startDateIndex <= dateIndex <= endDateIndex.
+     * @dev A Julian Date (JD) is composed
+     * of two pieces, the Julian Day Number (JDN)
+     * and day fraction. 
+     * 
+     * @param `jdn` describes the number of solar days
+     * between the given day and a fixed day in history starting
+     * from 12:00 UT (noon).
+     * @param `dayFraction` is between 0 and 1,
+     *`dayFraction` should be interpreted as the
+     * number after the decimal point. I.e.
+     * 5 means 0.5. 51 mean 0.51.
      */
-    struct Epoch {
-        uint256 startDateIndex;
-        uint256 endDateIndex;
-        uint256 releaseDateIndex;
+    struct JulianDate {
+        int256 jdn;
+        uint16 dayFraction;
     }
 
-    // Mapping from epoch name to Epoch
-    mapping(string => Epoch) public epochs;
-
-    // Maximum amount of epoch releases: Live + 5 others
-    uint8 public constant maximumEpochReleases = 6;
-
-    // Array with all epoch names that have been released
-    string[] public epochsReleased;
+    // Unix epoch date (1970-01-01) JD
+    JulianDate private _unixEpochJD = JulianDate(2440587, 5);
 
     /**
-     * @dev Initialize the contract with the default `name` and `symbol`.
+     * @dev Representation of a Gregorian
+     * calendar date.
+     *
+     * @param `day_of_week` from 0 to 6 indicating
+     * the day of the week, with 0 being Sunday,
+     * 1 being Monday, etc.
+     * @param `day`: integer from 1 to 31 indicating the
+     * day of the month.
+     * @param `month` integer from 1 to 12 indicating the
+     * month of the year.
+     * @param `year` signed integer for the year. The year
+     * before 1 is 0, and the year before 0 is -1, etc.
+     * A year of 1 is 1 CE, a year of 0 is 1 BCE, 
+     * a year of -1 is 2 BCE, etc.
      */
-    constructor() public ERC721("DateCalendar", "DC") {
-        launchBlockDateIndex = blockDateIndex();
+    struct GCalDate {
+        uint8 day_of_week; 
+        uint8 day;
+        uint8 month;
+        int256 year;
+    }   
 
-        _defineEpoch('Stub', 0, launchBlockDateIndex);
-        _defineEpoch('Live', launchBlockDateIndex, launchBlockDateIndex + 365 * 100);
-        releaseEpoch('Live');
+    // Mapping from DTI to Gregorian calendar date proof
+    mapping(uint256 => GCalDate) private _dateProofs;
 
+    /**
+     * @dev Initialize the contract with a `name` and `symbol`.
+     */
+    constructor(string memory name, string memory symbol, bool allowFutureDates_) ERC721(name, symbol) { 
+        allowFutureDates = allowFutureDates_;
     }
 
     /**
-     * @dev Define an epoch for the calendar.
+     * @dev Set the base URI for the contract. Token URIs are derived from this base.
      */
-    function _defineEpoch(string memory epochName, uint256 startDateIndex, uint256 endDateIndex) private {
-        epochs[epochName] = Epoch(startDateIndex, endDateIndex, 0);
-    }  
+    function setBaseURI(string memory baseURI) public onlyOwner {
+        _baseDCURI = baseURI;
+    }
 
+    function _baseURI() internal view override returns (string memory) {
+        return _baseDCURI;
+    }
 
     /**
-     * @dev Checks whether a specific epoch has been defined.
+     * @dev Retrieve the Gregorian calendar date proof of a date token index.
      */
-    function _epochDefined(string memory epochName) private view returns (bool) {
-        Epoch storage epoch = epochs[epochName];
-        if (epoch.startDateIndex == 0 && epoch.endDateIndex == 0) {
-            return false;
-        }
-        return true;
-    }  
+    function proofOf(uint256 dateTokenIndex) public view returns (GCalDate memory) {
+        require(_exists(dateTokenIndex), "DateCalendar: date proof query for nonexistent token");
 
+        return _dateProofs[dateTokenIndex];
+    }
 
     /**
-     * @dev Release an epoch so that its dates become mintable.
+     * @dev Retrieve the Gregorian calendar date string proof of a date token index.
      */
-    function releaseEpoch(string memory epochName) public onlyOwner {
-        require(epochsReleased.length <= maximumEpochReleases, "DateCalendar: maximum amount of epochs have been released.");
-        require(_epochDefined(epochName), "DateCalendar: epoch has not been defined and cannot be released.");
+    function proofStringOf(uint256 dateTokenIndex) public view returns (string memory) {
+        require(_exists(dateTokenIndex), "DateCalendar: date string proof query for nonexistent token");
 
-        epochsReleased.push(epochName);
-
-        Epoch storage epoch = epochs[epochName];
-        epoch.releaseDateIndex = blockDateIndex() + 7;
-    } 
+        return _gCalDateToString(_dateProofs[dateTokenIndex]);
+    }
 
     /**
      * @dev Returns the number of days since the Unix epoch (1970-01-01).
@@ -95,33 +127,31 @@ contract DateCalendar is ERC721, Ownable {
     }
 
     /**
-     * @dev Determines the `dateIndex` given the current block.
+     * @dev Determines the JD of the current block.
      */
-     function blockDateIndex() public view returns (uint256) {
-        return _unixEpochDateIndex + _daysFromUnixEpoch() - 1;
+     function currentBlockJD() public view returns (JulianDate memory) {
+        int256 unixDelta = int256(_daysFromUnixEpoch());
+        return JulianDate(_unixEpochJD.jdn + unixDelta, 5);
+     }
+
+    /**
+     * @dev Convert a Date Token Index to a Julian Date.
+     */
+     function _dtiToJD(uint256 dateTokenIndex) private pure returns (JulianDate memory) {
+        int256 jdn = int256(dateTokenIndex) - int256(_dtiMidpoint);
+        return JulianDate(jdn, 5);
      }
 
 
     /**
-     * @dev Determines whether a date index has been released.
+     * @dev Determines whether a JD has been released.
      */
-     function _isReleased(uint256 dateIndex) private view returns (bool) {
-        uint256 bdi = blockDateIndex();
-        require(dateIndex <= bdi, "DateCalendar: date specified is in the future.");
-
-        string storage epochName;
-        Epoch storage epoch;
-        for (uint8 i=0; i<epochsReleased.length; i++) {
-            epochName = epochsReleased[i];
-            epoch = epochs[epochName];
-            if (bdi >= epoch.releaseDateIndex) {
-                if (dateIndex >= epoch.startDateIndex && dateIndex <= epoch.endDateIndex) {
-                    return true;
-                }
-            }
+     function _isReleased(JulianDate memory julianDate) private view returns (bool) {
+        if (allowFutureDates) {
+            return true;
         }
-
-        return false;
+        JulianDate memory currentJD = currentBlockJD();
+        return julianDate.jdn <= currentJD.jdn;
          
      }
 
@@ -129,36 +159,126 @@ contract DateCalendar is ERC721, Ownable {
     /**
      * @dev Mint a date calendar token.
      */
-    function mintDate(uint256 dateIndex) public {
-        require(_isReleased(dateIndex), "DateCalendar: date has not yet been released.");
+    function mintDate(uint256 dateTokenIndex) public {
+        JulianDate memory jd = _dtiToJD(dateTokenIndex);
+        require(_isReleased(jd), "DateCalendar: date has not yet been released.");
 
-        _safeMint(msg.sender, dateIndex);
-
+        _setDateProof(dateTokenIndex, jd);
+        _safeMint(msg.sender, dateTokenIndex);
 
     }
 
-    uint16[12] private _toJDHelper = [306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275];
+    /**
+     * @dev Save the Gregorian calendar date proof for a given date token index.
+     */
+     function _setDateProof(uint256 dateTokenIndex, JulianDate memory julianDate) private {
+        (uint8 dow, uint8 d, uint8 m, int256 y) = _jdToGCalDateVariables(julianDate);
+
+        GCalDate storage date = _dateProofs[dateTokenIndex];
+        date.day_of_week = dow;
+        date.day = d;
+        date.month = m;
+        date.year = y;
+
+        emit DateProof(dateTokenIndex, dow, d, m, y);
+         
+     }
+
+    uint16[12] private _toGCalDateHelper = [0, 31, 61, 92, 122, 153, 184, 214, 245, 275, 306, 337];
 
     /**
-     * @dev Test.
+     * @dev Calculate the variables of a Gregorian calendar date from a JD.
+     *
+     * References
+     * [1] P. Baum, "Date Algorithms", 2020.
+     * [2] J. Meeus, "Astronomical Algorithms", pp. 65, 1998. 
      */    
-    function gcal_to_jd(int256 y, uint8 m, int8 d) public view returns (int256) {
-        if (m < 3) {
-            y -= 1;
+    function _jdToGCalDateVariables(JulianDate memory julianDate) private view returns (uint8, uint8, uint8, int256) {
+        uint8 dow = _jdToDOW(julianDate);
+        (uint8 d, uint8 m, int256 y) = _jdToDMY(julianDate);
+        return (dow, d, m, y);
+
+    }
+
+    function _jdToDMY(JulianDate memory julianDate) private view returns (uint8, uint8, int256) {
+        int256 z = julianDate.jdn - 1721118;
+        int256 a_ = z * 100 - 25;
+        int256 a = _divideAndFloor(a_, 3652425);
+        int256 p1_ = _divideAndFloor(a,  4);
+        int256 y_ = z * 100 - 25 + a * 100 - p1_ * 100;
+        int256 y = _divideAndFloor(y_, 36525);
+        int256 p2_ = _divideAndFloor(36525 * y, 100);
+        uint256 c = uint256(z + a - p1_ - p2_);
+        uint8 m = ((5 * c + 456) / 153).toUint8();
+        uint16 f = _toGCalDateHelper[m-3];
+        uint8 d = (c - f).toUint8();
+        if (m > 12) {
+            y += 1;
+            m -= 12;
         }
-        int16 f = int16(_toJDHelper[m-1]);
-        int256 p1 = y / 4;
-        int256 p2 = y / 100;
-        int256 p3 = y / 400;
-        if (y < 0) {
-            p1 -= 1;
-            p2 -= 1;
-            p3 -= 1;
+        return (d, m, y);
+    }
+
+    function _jdToDOW(JulianDate memory julianDate) private view returns (uint8) {
+        uint256 dow = uint256(_clockModulo(julianDate.jdn + 2, 7));
+        return dow.toUint8();
+    }
+
+    /**
+     * @dev Take the floor of (x / y). Assumes y > 0.
+     */
+    function _divideAndFloor(int256 x, int256 y) private pure returns (int256) {
+        if (x >= 0) {
+            // For positive division, floor is done by default.
+            return x / y;
+        } else {
+            // For negative division, need to take the negative
+            // of the ceiling of the positive division.
+            return -((-x + y -1) / y);
         }
 
-        int256 jdn = d + f + 365 * y + p1 - p2 + p3 + 1721119;
-        return jdn;
+    }
 
-     }
+    /**
+     * @dev Modulo in solidity is a remainder. This returns the clock modulo
+     * of (x % y). Assumes y > 0.
+     */
+    function _clockModulo(int256 x, int256 y) private pure returns (int256) {
+        return x - (y * _divideAndFloor(x, y));
+    }
+
+    string[7] private _daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday",
+                                     "Thursday", "Friday", "Saturday"];
+
+    string[12] private _months = ["January", "February", "March", "April", "May", "June",
+                                  "July", "August", "September", "October", "November", "December"];
+
+    string private _space = " ";
+
+    /**
+     * @dev Represent a Gregorian calendar date in
+     * a readable string format.
+     */    
+    function _gCalDateToString(GCalDate storage gCalDate) private view returns (string memory) {
+        string memory dow  = _daysOfWeek[gCalDate.day_of_week];
+        uint256 d = gCalDate.day;
+        string memory m = _months[gCalDate.month - 1];
+        uint256 y;
+        int256 y_ = gCalDate.year;
+        string memory era;
+        if (y_ <= 0) {
+            y = uint256(-y_ + 1);
+            era = "BCE";
+            
+        } else {
+            y = uint256(y_);
+            era = "CE";
+        }
+        return string(abi.encodePacked(dow, _space, 
+                                       d.toString(), _space, 
+                                       m, _space, 
+                                       y.toString(), _space, 
+                                       era));
+    }
 
 }
