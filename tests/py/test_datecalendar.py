@@ -90,12 +90,12 @@ def test_jd_gcal(jd_data, gcal_data):
 	assert gcal.day == gcal_data[2]
 
 test_gcal_dow_data = [
-	('15 October 1582', 'Friday 15 October 1582 CE'),
-	('September 11, 2001', 'Tuesday 11 September 2001 CE'),
-	('2021 12 22', 'Wednesday 22 December 2021 CE'),
-	('2021 12 25', 'Saturday 25 December 2021 CE'),
-	('2018 06 19', 'Tuesday 19 June 2018 CE'),
-	('2016 02 29', 'Monday 29 February 2016 CE')
+	('15 October 1582', 'Friday 15 October 1582'),
+	('September 11, 2001', 'Tuesday 11 September 2001'),
+	('2021 12 22', 'Wednesday 22 December 2021'),
+	('2021 12 25', 'Saturday 25 December 2021'),
+	('2018 06 19', 'Tuesday 19 June 2018'),
+	('2016 02 29', 'Monday 29 February 2016')
 ]
 
 @pytest.mark.parametrize("gcal_str,expected", test_gcal_dow_data)
@@ -104,19 +104,19 @@ def test_gcal_day_of_week(gcal_str, expected):
 
 def test_gcal_additions():
 	jd0 = dc.JulianDate(-1, 5)
-	assert str(jd0.to_gcal_date()) == 'Monday 24 November 4714 BCE'
+	assert str(jd0.to_gcal_date()) == 'Monday 24 November 4714 BC'
 	jd1 = dc.JulianDate(0, 5)
-	assert str(jd1.to_gcal_date()) == 'Tuesday 25 November 4714 BCE'
+	assert str(jd1.to_gcal_date()) == 'Tuesday 25 November 4714 BC'
 	jd2 = dc.JulianDate(1, 5)
-	assert str(jd2.to_gcal_date()) == 'Wednesday 26 November 4714 BCE'
+	assert str(jd2.to_gcal_date()) == 'Wednesday 26 November 4714 BC'
 	jd3 = dc.JulianDate(2, 5)
-	assert str(jd3.to_gcal_date()) == 'Thursday 27 November 4714 BCE'
+	assert str(jd3.to_gcal_date()) == 'Thursday 27 November 4714 BC'
 	jd4 = dc.JulianDate(3, 5)
-	assert str(jd4.to_gcal_date()) == 'Friday 28 November 4714 BCE'
+	assert str(jd4.to_gcal_date()) == 'Friday 28 November 4714 BC'
 	jd5 = dc.JulianDate(4, 5)
-	assert str(jd5.to_gcal_date()) == 'Saturday 29 November 4714 BCE'
+	assert str(jd5.to_gcal_date()) == 'Saturday 29 November 4714 BC'
 	jd6 = dc.JulianDate(5, 5)
-	assert str(jd6.to_gcal_date()) == 'Sunday 30 November 4714 BCE'
+	assert str(jd6.to_gcal_date()) == 'Sunday 30 November 4714 BC'
 	jd6 = dc.JulianDate(-24, 5)
 	gcal = jd6.to_gcal_date()
 	assert gcal.day == 1
@@ -212,19 +212,19 @@ def test_jcal_day_of_week(gcal_str, ignore):
 
 def test_jcal_additions():
 	jd0 = dc.JulianDate(-1, 5)
-	assert str(jd0.to_jcal_date()) == 'Monday 1 January 4713 BCE'
+	assert str(jd0.to_jcal_date()) == 'Monday 1 January 4713 BC'
 	jd1 = dc.JulianDate(0, 5)
-	assert str(jd1.to_jcal_date()) == 'Tuesday 2 January 4713 BCE'
+	assert str(jd1.to_jcal_date()) == 'Tuesday 2 January 4713 BC'
 	jd2 = dc.JulianDate(1, 5)
-	assert str(jd2.to_jcal_date()) == 'Wednesday 3 January 4713 BCE'
+	assert str(jd2.to_jcal_date()) == 'Wednesday 3 January 4713 BC'
 	jd3 = dc.JulianDate(2, 5)
-	assert str(jd3.to_jcal_date()) == 'Thursday 4 January 4713 BCE'
+	assert str(jd3.to_jcal_date()) == 'Thursday 4 January 4713 BC'
 	jd4 = dc.JulianDate(3, 5)
-	assert str(jd4.to_jcal_date()) == 'Friday 5 January 4713 BCE'
+	assert str(jd4.to_jcal_date()) == 'Friday 5 January 4713 BC'
 	jd5 = dc.JulianDate(4, 5)
-	assert str(jd5.to_jcal_date()) == 'Saturday 6 January 4713 BCE'
+	assert str(jd5.to_jcal_date()) == 'Saturday 6 January 4713 BC'
 	jd6 = dc.JulianDate(5, 5)
-	assert str(jd6.to_jcal_date()) == 'Sunday 7 January 4713 BCE'
+	assert str(jd6.to_jcal_date()) == 'Sunday 7 January 4713 BC'
 	jd6 = dc.JulianDate(29, 5)
 	jcal = jd6.to_jcal_date()
 	assert jcal.day == 31

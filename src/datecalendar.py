@@ -49,27 +49,24 @@ JD=(JDN, day fraction)
 
 When a token is minted, the DateCalendar
 smart contract simultaneously assigns
-a date string to the date token index
+a date to the date token index
 as a verifiable proof of the date that is owned by
-a token holder. This date string represents a date 
+a token holder. This date represents a date 
 in the Greogrian calendar, which is the calendar
-in common use today. The date string is formatted
-in the following way:
-
-{Day of Week} {Day of Month} {Month} {Year} {Era}
+in common use today. 
 
 For example, the JD of -0.5 has a Gregorian
-calendar date string of Monday 1 January 4713 BCE.
+calendar date of Monday 1 January 4713 BC.
 
 Calendars in popular use have changed throughout 
 history and are likely to continue changing.
 The Gregorian calendar was first introduced
-on Friday 15 October 1582 CE as a modification to
+on Friday 15 October 1582 as a modification to
 the Julian calendar in order to remove the "drift"
 in the solar year. These 2 calendar systems can have
 different dates for a given JD. For example,
 the day before the Gregorian calendar was implemented
-was Thursday 4 October 1582 CE in the Julian calendar.
+was Thursday 4 October 1582 in the Julian calendar.
 
 In the DateCalendar, all historical dates,
 even those prior to the invention of the Gregorian 
@@ -279,8 +276,8 @@ class CalendarDate(_CalendarDate):
     year: :obj:`int256`
         Signed integer for the year. The year
         before 1 is 0, and the year before 0 is -1, etc.
-        A year of 1 is 1 CE, a year of 0 is 1 BCE, 
-        a year of -1 is 2 BCE, etc.
+        A year of 1 is 1 AD, a year of 0 is 1 BC, 
+        a year of -1 is 2 BC, etc.
     """
 
     DAYS_OF_WEEK = (
@@ -311,11 +308,12 @@ class CalendarDate(_CalendarDate):
         y = self.year
         era = ''
         if y <= 0:
-            era = 'BCE'
+            era = 'BC'
             y = -y + 1
+            return f'{dow} {d} {m} {y} {era}'
         else:
-            era = 'CE'
-        return f'{dow} {d} {m} {y} {era}'
+            return f'{dow} {d} {m} {y}'
+        
 
     def __repr__(self):
         return self.__str__()
@@ -333,7 +331,6 @@ class CalendarDate(_CalendarDate):
         """
         Create a calendar date from a Python datetime.
         """
-        dow = cls.day_of_week_from_jd(_cd.to_jd())
         return cls.from_dmy(day=dt.day,
                             month=dt.month,
                             year=dt.year)

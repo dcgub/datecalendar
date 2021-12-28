@@ -15,12 +15,10 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 contract DateCalendar is ERC721, Ownable {
     /**
      * @dev Emitted when `dateTokenIndex` token's `GCalDate` proof has been 
-     * created and saved to contract. This event will contain the
-     * variables of the `GCalDate`
+     * created and saved to the contract. This event will contain the
+     * variables of the `GCalDate`, excluding `day_of_week`.
      */
-    event DateProof(uint256 indexed dateTokenIndex, 
-                    uint8 indexed day_of_week, 
-                    uint8 indexed day, 
+    event DateProof(uint8 indexed day, 
                     uint8 indexed month, 
                     int256 indexed year);
 
@@ -111,15 +109,6 @@ contract DateCalendar is ERC721, Ownable {
     }
 
     /**
-     * @dev Retrieve the Gregorian calendar date string proof of a date token index.
-     */
-    function proofStringOf(uint256 dateTokenIndex) public view returns (string memory) {
-        require(_exists(dateTokenIndex), "DateCalendar: date string proof query for nonexistent token");
-
-        return _gCalDateToString(_dateProofs[dateTokenIndex]);
-    }
-
-    /**
      * @dev Returns the number of days since the Unix epoch (1970-01-01).
      */
     function _daysFromUnixEpoch() private view returns (uint256) {
@@ -163,8 +152,8 @@ contract DateCalendar is ERC721, Ownable {
         JulianDate memory jd = _dtiToJD(dateTokenIndex);
         require(_isReleased(jd), "DateCalendar: date has not yet been released.");
 
-        _setDateProof(dateTokenIndex, jd);
         _safeMint(msg.sender, dateTokenIndex);
+        _setDateProof(dateTokenIndex, jd);
 
     }
 
@@ -180,7 +169,7 @@ contract DateCalendar is ERC721, Ownable {
         date.month = m;
         date.year = y;
 
-        emit DateProof(dateTokenIndex, dow, d, m, y);
+        emit DateProof(d, m, y);
          
      }
 
@@ -247,38 +236,5 @@ contract DateCalendar is ERC721, Ownable {
         return x - (y * _divideAndFloor(x, y));
     }
 
-    string[7] private _daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday",
-                                     "Thursday", "Friday", "Saturday"];
-
-    string[12] private _months = ["January", "February", "March", "April", "May", "June",
-                                  "July", "August", "September", "October", "November", "December"];
-
-    string private _space = " ";
-
-    /**
-     * @dev Represent a Gregorian calendar date in
-     * a readable string format.
-     */    
-    function _gCalDateToString(GCalDate storage gCalDate) private view returns (string memory) {
-        string memory dow  = _daysOfWeek[gCalDate.day_of_week];
-        uint256 d = gCalDate.day;
-        string memory m = _months[gCalDate.month - 1];
-        uint256 y;
-        int256 y_ = gCalDate.year;
-        string memory era;
-        if (y_ <= 0) {
-            y = uint256(-y_ + 1);
-            era = "BCE";
-            
-        } else {
-            y = uint256(y_);
-            era = "CE";
-        }
-        return string(abi.encodePacked(dow, _space, 
-                                       d.toString(), _space, 
-                                       m, _space, 
-                                       y.toString(), _space, 
-                                       era));
-    }
 
 }

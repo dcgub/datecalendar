@@ -1,6 +1,7 @@
 import datecalendar as dcpy
 
 import brownie
+from web3.constants import ADDRESS_ZERO
 
 import pytest
 
@@ -90,6 +91,35 @@ def test_mint(dc, accounts, chain):
     dc.mintDate(today_dti + 2, {'from': acc})
 
 
+def test_events(dc, accounts, chain):
+    acc = accounts[1]
+    acc2 = accounts[2]
+
+    # First mint
+    tx1 = dc.mintDate(0, {'from': acc})
+    e1 = tx1.events
+    # Second mint
+    tx2 = dc.mintDate(2000, {'from': acc2})
+    e2 = tx2.events
+
+    assert len(e1) == 2
+    assert len(e1) == len(e2)
+
+    assert e1['Transfer']['from'] == ADDRESS_ZERO
+    assert e1['Transfer']['to'] == acc.address
+    assert e2['Transfer']['from'] == ADDRESS_ZERO
+    assert e2['Transfer']['to'] == acc2.address
+
+    p1 = dc.proofOf(0)
+    p1_d = dcpy.GCalDate(*p1)
+    p2 = dc.proofOf(2000)
+    p2_d = dcpy.GCalDate(*p2)
+    e1_d = dcpy.GCalDate.from_dmy(*list(e1['DateProof'].values()))
+    e2_d = dcpy.GCalDate.from_dmy(*list(e2['DateProof'].values()))
+    assert p1_d == e1_d
+    assert p2_d == e2_d
+
+
 def test_perpetual_mint(dc, accounts, chain):
     acc = accounts[1]
     jd  = dcpy.JulianDate(*dc.currentBlockJD())
@@ -136,9 +166,9 @@ def test_date_accuracy(dc, accounts, chain, jd_data):
     py_date = jd.to_gcal_date()
 
     dc.mintDate(dti, {'from': acc})
-    sol_date = dc.proofStringOf(dti)
+    sol_date = dcpy.GCalDate(*dc.proofOf(dti))
 
-    assert str(py_date) == sol_date
+    assert py_date == sol_date
 
 
 @pytest.mark.slow
@@ -167,9 +197,9 @@ def test_historical_date_accurary(dc_test, accounts, chain):
             py_date = dcpy.DateTokenIndex(d).to_jd().to_gcal_date()
 
             dc.mintDate(d, {'from': acc})
-            sol_date = dc.proofStringOf(d)
+            sol_date = dcpy.GCalDate(*dc.proofOf(d))
 
-            assert str(py_date) == sol_date
+            assert py_date == sol_date
             
         
         dti += cent_increment
@@ -197,9 +227,9 @@ def test_large_date_accurary(dc_test, accounts, chain):
             py_date = dcpy.DateTokenIndex(d).to_jd().to_gcal_date()
 
             dc.mintDate(d, {'from': acc})
-            sol_date = dc.proofStringOf(d)
+            sol_date = dcpy.GCalDate(*dc.proofOf(d))
 
-            assert str(py_date) == sol_date
+            assert py_date == sol_date
             
         
         dti += b_increment
