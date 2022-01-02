@@ -169,6 +169,47 @@ def test_gcal_bounds():
 	assert y - 10 == gcal.year
 
 
+test_valid_data = [
+	((1, 1, 2020), True),
+	((5, 5, 2020), True),
+	((7, 8, 2020), True),
+	((12, 8, 2020), True),
+	((19, 11, 2020), True),
+	((25, 12, 2020), True),
+	((31, 1, 2000), True),
+	((28, 2, 2000), True),
+	((29, 2, 2000), True),
+	((31, 3, 2000), True),
+	((30, 4, 2000), True),
+	((31, 5, 2015), True),
+	((30, 6, 2015), True),
+	((31, 7, 2015), True),
+	((31, 8, 2015), True),
+	((30, 9, 2021), True),
+	((31, 10, 2021), True),
+	((30, 11, 2021), True),
+	((31, 12, 2021), True),
+
+	((32, 1, 2000), False),
+	((30, 2, 2000), False),
+	((32, 3, 2000), False),
+	((31, 4, 2000), False),
+	((32, 5, 2015), False),
+	((31, 6, 2015), False),
+	((32, 7, 2015), False),
+	((32, 8, 2015), False),
+	((31, 9, 2021), False),
+	((32, 10, 2021), False),
+	((31, 11, 2021), False),
+	((32, 12, 2021), False),
+
+	((40, 1, 2021), False),
+	((60, 12, 2021), False),
+]
+
+@pytest.mark.parametrize("dmy,valid", test_valid_data)
+def test_gcal_valid(dmy, valid):
+	return dc.GCalDate.from_dmy(*dmy).valid == valid
 
 test_jcal_data = [
 	((-39, 5), (-4713, 11, 24)),
@@ -279,6 +320,11 @@ def test_jcal_bounds():
 	jd = dc.DateTokenIndex(uupper - 365.25 * 10).to_jd()
 	jcal = jd.to_jcal_date()
 	assert y - 10 == jcal.year
+
+
+@pytest.mark.parametrize("dmy,valid", test_valid_data)
+def test_jcal_valid(dmy, valid):
+	return dc.JCalDate.from_dmy(*dmy).valid == valid
 
 
 ulower, uupper = dc.DateTokenIndex.get_int_bounds()

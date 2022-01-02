@@ -256,7 +256,31 @@ class JulianDate(_JulianDate):
 _CalendarDate = namedtuple('CalendarDate', ['day_of_week' ,'day',
                                             'month', 'year'])
 
-class CalendarDate(_CalendarDate):
+class ComparableMixin:
+    """
+    Mixin for only needing to implement
+    `__lt__` to get the entire comparison
+    suite.
+
+    Source: https://stackoverflow.com/questions/1061283/lt-instead-of-cmp
+    """
+
+    def __eq__(self, other):
+        return not self<other and not other<self
+
+    def __ne__(self, other):
+        return self<other or other<self
+
+    def __gt__(self, other):
+        return other<self
+
+    def __ge__(self, other):
+        return not self<other
+
+    def __le__(self, other):
+        return not other<self
+
+class CalendarDate(ComparableMixin, _CalendarDate):
     """
     Representation of a date in
     a modern calendar.
@@ -293,6 +317,14 @@ class CalendarDate(_CalendarDate):
         'October', 'November', 'December'
     )
 
+    AD_ERAS = ('AD', 'CE', 'A.D.', 'C.E.')
+
+    DEFAULT_AD = 'AD'
+
+    BC_ERAS = ('BC', 'BCE', 'B.C.', 'B.C.E.')
+
+    DEFULT_BC = 'BC'
+
     def __new__(cls, day_of_week: uint8, day: uint8,
                 month: uint8, year: int256):
         return super(CalendarDate, cls).__new__(cls, 
@@ -306,17 +338,39 @@ class CalendarDate(_CalendarDate):
         d = self.day
         m = self.MONTHS[self.month - 1]
         y = self.year
-        era = ''
-        if y <= 0:
-            era = 'BC'
-            y = -y + 1
-            return f'{dow} {d} {m} {y} {era}'
+        y_, era = self.convert_signed_year(y)
+        if era in self.BC_ERAS:
+            return f'{dow} {d} {m} {y_} {era}'
         else:
             return f'{dow} {d} {m} {y}'
         
 
     def __repr__(self):
         return self.__str__()
+
+    def __lt__(self, other):
+        if not isinstance(other, CalendarDate):
+            raise NotImplementedError
+
+        if self.year > other.year:
+            return False
+
+        if self.year < other.year:
+            return True
+
+        if self.month > other.month:
+            return False
+
+        if self.month < other.month:
+            return True
+
+        if self.day > other.day:
+            return False
+
+        if self.day < other.day:
+            return True
+
+        return False
 
     @classmethod
     def from_string(cls, value: str) -> CalendarDate:
@@ -349,7 +403,62 @@ class CalendarDate(_CalendarDate):
         return cls(day_of_week=dow,
                    day=day,
                    month=month,
-                   year=year)        
+                   year=year)  
+
+    @classmethod
+    def from_unix_timestamp(cls, ts: uint256) -> CalendarDate:
+        """
+        Create a calendar date by providing a unix
+        timestamp.
+        """
+        return cls.from_datetime(datetime.datetime.utcfromtimestamp(ts))
+
+    @classmethod
+    def convert_signed_year(cls, year: int256) -> Tuple[uint256, str]:
+        """
+        Converts a signed year to a tuple of (positive year, era)
+        which is the convention used in calendars.
+        """
+        if year <= 0:
+            year = -year + 1
+            return (year, cls.DEFULT_BC)
+
+        return (year, cls.DEFAULT_AD)
+
+
+    @classmethod
+    def convert_unsigned_year(cls, year: uint256, era: str=DEFULT_BC) -> int256:
+        """
+        Converts an usigned year and era combination
+        to a signed year.
+        """
+        if era in cls.BC_ERAS:
+            year = -(year - 1)
+
+        return year
+
+    @property
+    def valid(self) -> bool:
+        """
+        Determines whether the Calendar date is valid.
+
+        A date is valid if it matches the inferred
+        date from its JD.
+        """
+        cls = self.__class__
+        d_from_jd = cls.from_jd(self.to_jd())
+        return self == d_from_jd
+
+    def to_jd(self) -> JulianDate:
+        raise NotImplementedError
+
+    def to_dti(self) -> DateTokenIndex:
+        """
+        Convert a Calendar date to a
+        date token index>
+        """
+        return self.to_jd().to_dti()
+
 
 class GCalDate(CalendarDate):
 
@@ -452,6 +561,7 @@ class GCalDate(CalendarDate):
         b = self.year % 100
         c = self.year % 400
         return not a and (b or not c)
+
 
 class JCalDate(CalendarDate):
 
