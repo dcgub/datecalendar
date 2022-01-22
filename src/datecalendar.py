@@ -87,11 +87,12 @@ algorithmns outlined and developed by Peter Baum.
 """
 from __future__ import annotations
 
+from dateutil.parser import parse as parse_dt_string
+
 from collections import namedtuple
 from typing import Any, Tuple
 import datetime
-
-from dateutil.parser import parse as parse_dt_string
+import math
 
 class SolidityInt(int):
 
@@ -436,6 +437,31 @@ class CalendarDate(ComparableMixin, _CalendarDate):
             year = -(year - 1)
 
         return year
+
+    @classmethod
+    def get_century_of_signed_year(cls, year: int256) -> Tuple[uint256, str]:
+        """
+        Get the (century, era) for a given signed year.
+        """
+        uns_y, era = cls.convert_signed_year(year)
+        return (math.ceil(uns_y / 100), era)
+
+    @classmethod
+    def get_signed_bounds_of_century(cls, century: uint256, era: str=DEFULT_BC) -> Tuple[int256, int256]:
+        """
+        Get the starting and ending signed years of a given
+        (century, era) combination.
+        """
+        if era in cls.BC_ERAS:
+            # -99-0, -399--300, etc.
+            start = -century * 100 + 1;
+            end = (-century + 1) * 100
+        else:
+            # 1-100, 1901-2000, etc.
+            start = (century - 1) * 100 + 1
+            end = century * 100
+        return (start, end)
+        
 
     @property
     def valid(self) -> bool:
