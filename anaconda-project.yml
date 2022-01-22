@@ -37,7 +37,7 @@ commands:
 
 #
 # In the variables section, list any environment variables your code depends on.
-# Use `anaconda-project add-variable` to add variables.
+# Use `anaconda-project add-variable` to add variables..
 #
 variables: {}
 #
