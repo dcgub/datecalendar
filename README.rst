@@ -18,16 +18,15 @@ Date Calendar proves ownership in a slightly different way. When a Date Token In
 Converting Between Indices and Dates
 ------------------------------------
 
-Dates in the calendar are as of 00:00 UT (Universal Time).
-The Date Token Index (DTI) is the unique identifier used to keep 
-track of the date tokens in the smart contract and 
-represents the relative positioning of all possible dates 
-in the calendar.
+Dates in the calendar are as of 00:00 UT (Universal Time). The Date Token Index (DTI) is the unique identifier used to keep track of the date tokens in the smart contract and represents the relative positioning of all possible dates in the calendar.
 
+==================== ==================== ====================
 DTI
+==================== ==================== ====================
+Start                                     End
+0                                         40*10**9*365.25
+==================== ==================== ====================
 
-0                                                40*10**9*365.25
-|------------------------------------------------|
 
 Since the difference between two date token indices
 represents the number of times an entire day has passed
