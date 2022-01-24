@@ -1,5 +1,9 @@
-`DateCalendar <https://github.com/dcgub/datecalendar>`__
-========================================================
+`Date Calendar <https://github.com/dcgub/datecalendar>`__
+=========================================================
+
+Date Calendar is a uniquely generated calendar where each date's proof of ownership is stored on the Ethereum blockchain. This `repo <https://github.com/dcgub/datecalendar>`__ contains 
+#. The DateCalendar.sol smart contract
+#. The datecalendar Python package that replicates the smart contract algorithms responsible for storing each date's proof of ownership.
 
 This module implements the core concepts of the
 DateCalendar.sol smart contract.
