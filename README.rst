@@ -1,3 +1,6 @@
+`DateCalendar <https://github.com/dcgub/datecalendar>`__
+========================================================
+
 This module implements the core concepts of the
 DateCalendar.sol smart contract.
 
