@@ -56,7 +56,7 @@ Start                   Middle                  End
 ======================= ======================= =======================
 
 
-Finally, Date Calendar converts the JD to a calendar date (day of week, day, month, year) using a date conversion algorithm developed by Peter Baum. This date represents a date in the Greogrian calendar, which is the calendar in common use today. For example, the JD of 37.5 has a Gregorian calendar date of Thursday 1 January 4713 BC.
+Finally, Date Calendar converts the JD to a calendar date (day of week, day, month, year) using a date conversion algorithm developed by `Peter Baum <https://www.researchgate.net/publication/316558298_Date_Algorithms>`__. This date represents a date in the Greogrian calendar, which is the calendar in common use today. For example, the JD of 37.5 has a Gregorian calendar date of Thursday 1 January 4713 BC.
 
 
 Date Calendar Uses Gregorian Calendar Dates
@@ -71,7 +71,7 @@ take special care in converting those dates to the equivalent Gregorian calendar
 The datecalendar Python Package
 -------------------------------
 
-This package replicates the Date Calendar smart contract algorithms responsible for storing each date's proof of ownership. It contains various utilities to convert to and from the various date representations: date token index, Julian Date, Julian calendar date, Gregorian calendar date. Many of these utilities were created using the algorithmns outlined and developed by Peter Baum.
+This package replicates the Date Calendar smart contract algorithms responsible for storing each date's proof of ownership. It contains various utilities to convert to and from the various date representations: date token index, Julian Date, Julian calendar date, Gregorian calendar date. Many of these utilities were created using the algorithmns outlined and developed by `Peter Baum <https://www.researchgate.net/publication/316558298_Date_Algorithms>`__.
 
 Usage
 -----
@@ -84,6 +84,7 @@ Usage
 
 	import datecalendar as dc
 
+	# What is the date for this index?
 	dti = dc.DateTokenIndex(20*10**9*365.25)
 	jd = dti.to_jd()
 	date = jd.to_gcal_date()
@@ -91,5 +92,5 @@ Usage
 
 	# Ethereum was created on this day
 	date = dc.GCalDate.from_string('July 30, 2015')
-	# Index of this date
+	# Date Token Index of this date
 	print(date.to_dti())

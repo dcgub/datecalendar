@@ -140,3 +140,6 @@ reports/
 # Dev notebooks
 dev.ipynb
 
+# accounts
+accounts/
+
