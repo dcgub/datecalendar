@@ -6,8 +6,17 @@ Date Calendar is a uniquely generated calendar where each date's proof of owners
 #. The DateCalendar.sol smart contract
 #. The datecalendar Python package that replicates the smart contract algorithms responsible for storing each date's proof of ownership.
 
-This module implements the core concepts of the
-DateCalendar.sol smart contract.
+How Date Calendar Proves Ownership
+----------------------------------
+
+The DateCalendar.sol smart contract implements the `ERC721 Non-Fungible Token (NFT) Standard <https://eips.ethereum.org/EIPS/eip-721>`__. Whenever a token gets minted or transferred, this standard assigns the new owner's address to the token's index. I.e. the 10th token is owned by Bob. 
+
+Most NFT projects, such as those whose tokens represent a digital image, will save the order of the images on the smart contract so that token holders can independently verify that the image they own is in the same position as the index. This can be done by saving a hash of all images in the proper order on the smart contract or by providing the hash of the image to the smart contract when it gets minted. Of course, there should be no way to tamper with the order of the images on the smart contract otherwise token holders might lose faith in the project.
+
+Date Calendar proves ownership in a slightly different way. When a Date Token Index (DTI) gets minted and assigned to an owner, the smart contract simultaneously generates the unique date that is represented by the DTI and saves it to the ledger. In this way, the project does not need to pre-create and store all possible dates in the calendar since the proof of ownership occurs as date tokens get minted.
+
+Converting Between Indices and Dates
+------------------------------------
 
 Dates in the calendar are as of 00:00 UT (Universal Time).
 The Date Token Index (DTI) is the unique identifier used to keep 
