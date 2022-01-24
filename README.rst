@@ -13,7 +13,7 @@ The DateCalendar.sol smart contract implements the `ERC721 Non-Fungible Token (N
 
 Most NFT projects, such as those whose tokens represent a digital image, will save the order of the images on the smart contract so that token holders can independently verify that the image they own is in the same position as the index. This can be done by saving a hash of all images in the proper order on the smart contract or by providing the hash of the image to the smart contract when it gets minted. Of course, there should be no way to tamper with the order of the images on the smart contract otherwise token holders might lose faith in the project.
 
-Date Calendar proves ownership in a slightly different way. When a Date Token Index (DTI) gets minted and assigned to an owner, the smart contract simultaneously generates the unique date that is represented by the DTI and saves it to the ledger. In this way, the project does not need to pre-create and store all possible dates in the calendar since the proof of ownership occurs as date tokens get minted.
+Date Calendar proves ownership in a slightly different way. When a Date Token Index (DTI) gets minted and assigned to an owner, the smart contract simultaneously generates the unique date that is represented by the DTI and saves it to the ledger. In this way, the project does not need to pre-create and store all possible dates in the calendar since the proof of ownership occurs as date tokens get minted. Token holders can independently verify the dates they own by calling the smart contract and checking that their dates (day of week, day, month, year) have been assigned to their token indices.
 
 Converting Between Indices and Dates
 ------------------------------------
