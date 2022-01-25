@@ -92,6 +92,7 @@ env_specs:
     description: Development environment
     packages: 
     - python=3.8.*
+    - pytest
     - jupyter
     - nodejs=16.13.1 #LTS version
     - spiceypy
@@ -101,3 +102,13 @@ env_specs:
       - jdcal
       - python-dateutil
       - web3
+  base:
+    description: Test environment in Github Workflows
+    packages: 
+      - pytest
+      - spiceypy
+      - pip: 
+        - jdcal
+        - python-dateutil
+
+

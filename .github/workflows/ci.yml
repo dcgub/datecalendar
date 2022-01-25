@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           $CONDA/bin/conda install anaconda-project
-          $CONDA/bin/anaconda-project prepare --env-spec dev
-          $CONDA/bin/anaconda-project run install-dev --env-spec dev
+          $CONDA/bin/anaconda-project prepare --env-spec base
+          $CONDA/bin/anaconda-project run --env-spec base install-dev
       - name: Tests
-        run: $CONDA/bin/anaconda-project run run-py-tests --env-spec dev
+        run: $CONDA/bin/anaconda-project run --env-spec base run-py-tests
