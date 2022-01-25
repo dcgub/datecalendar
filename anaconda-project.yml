@@ -88,34 +88,30 @@ platforms:
 # Use `anaconda-project add-env-spec` to add environment specs.
 #
 env_specs:
-  dev:
-    description: Development environment
+  py38:
+    description: Py38 Test environment
     packages: 
     - python=3.8.*
     - pytest
+    - spiceypy
+    - pip: 
+      - jdcal
+      - python-dateutil
+  py39:
+    description: Py39 Test environment
+    inherit_from: py38
+    packages: 
+    - python=3.9.*
+  dev:
+    description: Development environment
+    inherit_from: py38
+    packages: 
     - jupyter
     - nodejs=16.13.1 #LTS version
-    - spiceypy
     - twine
     - pip: 
       - eth-brownie
-      - jdcal
-      - python-dateutil
       - web3
-  py38:
-    description: Py38 Test environment in Github Workflows
-    packages: 
-      - python=3.8.*
-      - pytest
-      - spiceypy
-      - pip: 
-        - jdcal
-        - python-dateutil
-  py39:
-    description: Py39 Test environment in Github Workflows
-    inherit_from: py38
-    packages: 
-      - python=3.9.*
 
 
 

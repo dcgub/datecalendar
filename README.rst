@@ -1,6 +1,9 @@
 `Date Calendar <https://github.com/dcgub/datecalendar>`__
 =========================================================
 
+.. image:: https://github.com/dcgub/datecalendar/workflows/Tests/badge.svg
+        :target: https://github.com/dcgub/datecalendar/actions?query=branch%3Amain
+
 .. image:: https://img.shields.io/pypi/v/datecalendar.svg
         :target: https://pypi.python.org/pypi/datecalendar
 
