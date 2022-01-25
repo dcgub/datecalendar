@@ -32,8 +32,12 @@ commands:
     unix: jupyter notebook dev.ipynb
   run-py-tests:
     unix: pytest tests/py -m "not slow"
+  run-py-tests-cov:
+    unix: pytest tests/py -m "not slow" --cov datecalendar --cov-report xml
   run-all-py-tests:
     unix: pytest tests/py
+  run-all-sol-tests:
+    unix: pytest tests/sol
   build-pypi:
     unix: python setup.py sdist bdist_wheel & twine check dist/*
   upload-pypi-test:
@@ -93,6 +97,7 @@ env_specs:
     packages: 
     - python=3.8.*
     - pytest
+    - pytest-cov
     - spiceypy
     - pip: 
       - jdcal
