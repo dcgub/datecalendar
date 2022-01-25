@@ -20,7 +20,7 @@ jobs:
           $CONDA/bin/anaconda-project prepare --env-spec ${{ matrix.python-version }}
           $CONDA/bin/anaconda-project run --env-spec ${{ matrix.python-version }} install-dev
       - name: Tests
-        run: $CONDA/bin/anaconda-project run --env-spec ${{ matrix.python-version }} run-py-tests
+        run: $CONDA/bin/anaconda-project run --env-spec ${{ matrix.python-version }} run-py-tests-cov
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
