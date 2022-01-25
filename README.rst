@@ -4,6 +4,9 @@
 .. image:: https://github.com/dcgub/datecalendar/workflows/Tests/badge.svg
         :target: https://github.com/dcgub/datecalendar/actions?query=branch%3Amain
 
+.. image:: https://coveralls.io/repos/dcgub/datecalendar/badge.svg?branch=master
+        :target: https://coveralls.io/r/dcgub/datecalendar
+
 .. image:: https://img.shields.io/pypi/v/datecalendar.svg
         :target: https://pypi.python.org/pypi/datecalendar
 
