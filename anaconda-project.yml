@@ -102,13 +102,21 @@ env_specs:
       - jdcal
       - python-dateutil
       - web3
-  base:
-    description: Test environment in Github Workflows
+  py38:
+    description: Py38 Test environment in Github Workflows
     packages: 
+      - python=3.8.*
       - pytest
       - spiceypy
       - pip: 
         - jdcal
         - python-dateutil
+  py39:
+    description: Py39 Test environment in Github Workflows
+    inherit_from: py38
+    packages: 
+      - python=3.9.*
+
+
 
 

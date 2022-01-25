@@ -11,17 +11,13 @@ jobs:
     strategy:
       max-parallel: 6
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: ["py38", "py39"]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Set up Python ${{ matrix.python-version }} & Insall Dependencies
         run: |
           $CONDA/bin/conda install anaconda-project
-          $CONDA/bin/anaconda-project prepare --env-spec base
-          $CONDA/bin/anaconda-project run --env-spec base install-dev
+          $CONDA/bin/anaconda-project prepare --env-spec ${{ matrix.python-version }}
+          $CONDA/bin/anaconda-project run --env-spec ${{ matrix.python-version }} install-dev
       - name: Tests
-        run: $CONDA/bin/anaconda-project run --env-spec base run-py-tests
+        run: $CONDA/bin/anaconda-project run --env-spec ${{ matrix.python-version }} run-py-tests
