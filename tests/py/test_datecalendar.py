@@ -5,6 +5,88 @@ import jdcal
 import spiceypy as sp
 
 from collections import defaultdict
+import datetime
+
+def test_solidity_int_construction():
+	# This should be invalid
+	class uint5(dc.SolidityInt):
+		SOLIDITY_TYPE = 'uint5'
+
+	with pytest.raises(ValueError):
+		uint5.get_int_bounds()
+
+def test_comparable_mixin():
+	class T(dc.ComparableMixin):
+		def __init__(self, value):
+			self.value = value
+		def __lt__(self, other):
+			return self.value < other.value
+	t1 = T(1)
+	t2 = T(2)
+	assert t1 < t2
+	assert t1 <= t2
+	assert not (t1 > t2)
+	assert not (t1 >= t2)
+	assert not (t1 == t2)
+	assert t1 != t2
+
+
+def test_calendar_date():
+	cd = dc.CalendarDate(0, 1, 1, 0)
+	cd2 = dc.CalendarDate(0, 1, 1, 1)
+	assert repr(cd) == str(cd)
+
+	with pytest.raises(NotImplementedError):
+		cd < 2
+
+	assert not (cd2 < cd)
+
+	with pytest.raises(NotImplementedError):
+		cd.to_jd()
+
+test_year_conversions = [
+	(-10000, 101, 'BC'),
+	(-100, 2, 'BC'),
+	(0, 1, 'BC'),
+	(1, 1, 'AD'),
+	(2000, 20, 'AD'),
+	(2001, 21, 'AD'),
+	(10000, 100, 'AD')
+]
+
+@pytest.mark.parametrize("year,century,era", test_year_conversions)
+def test_calendar_year_conversions(year, century, era):
+	a = dc.CalendarDate.convert_signed_year(year)
+	b = dc.CalendarDate.convert_unsigned_year(*a)
+	assert b == year
+	assert a[1] == era
+	c = dc.CalendarDate.get_century_of_signed_year(year)
+	assert c == (century, era)
+	bounds = dc.CalendarDate.get_signed_bounds_of_century(*c)
+	assert (year >= bounds[0]) and (year <= bounds[1])
+
+def test_date_from_unix():
+	dt = datetime.datetime(2000, 1, 1)
+	d1 = dc.GCalDate.from_datetime(dt)
+	d2 = dc.GCalDate.from_unix_timestamp(dt.timestamp())
+	assert d1 == d2
+
+test_leaps = [
+	(2000, True, True),
+	(1900, False, True),
+	(1800, False, True),
+	(1700, False, True),
+	(1600, True, True),
+	(1500, False, True),
+]
+
+@pytest.mark.parametrize("year,gcal_leap,jcal_leap", test_leaps)
+def test_leap_years(year, gcal_leap, jcal_leap):
+	gcal = dc.GCalDate.from_dmy(1, 1, year)
+	assert gcal.leap_year == gcal_leap
+	jcal = dc.JCalDate.from_dmy(1, 1, year)
+	assert jcal.leap_year == jcal_leap
+
 
 def test_dti():
 	lower, upper = dc.DateTokenIndex.get_int_bounds()
@@ -34,6 +116,14 @@ def test_jd():
 
 	with pytest.raises(OverflowError):
 		dc.JulianDate(upper + 1, 5)	
+
+	# To float behaves as expected
+	jd = dc.JulianDate(1, 5)
+	assert jd.to_float() == 1.5
+	jd = dc.JulianDate(-10, 5)
+	assert jd.to_float() == -9.5
+	jd = dc.JulianDate(-10, 1)
+	assert jd.to_float() == -9.9
 
 
 def test_dti_jd():
@@ -84,6 +174,7 @@ def test_jd_gcal(jd_data, gcal_data):
 	gcal = jd.to_gcal_date()
 	assert gcal.to_jd() == jd
 	assert gcal.to_jd().to_gcal_date() == gcal
+	assert gcal.to_dti() == jd.to_dti()
 
 	assert gcal.year == gcal_data[0]
 	assert gcal.month == gcal_data[1]
@@ -237,6 +328,7 @@ def test_jd_gcal(jd_data, jcal_data):
 	jcal = jd.to_jcal_date()
 	assert jcal.to_jd() == jd
 	assert jcal.to_jd().to_jcal_date() == jcal
+	assert jcal.to_dti() == jd.to_dti()
 
 	assert jcal.year == jcal_data[0]
 	assert jcal.month == jcal_data[1]
@@ -325,6 +417,16 @@ def test_jcal_bounds():
 @pytest.mark.parametrize("dmy,valid", test_valid_data)
 def test_jcal_valid(dmy, valid):
 	return dc.JCalDate.from_dmy(*dmy).valid == valid
+
+
+def test_jcal_to_gcal():
+	jd = dc.JulianDate(0, 5)
+	gcal = dc.GCalDate.from_dmy(25, 11, -4713)
+	jcal = dc.JCalDate.from_dmy(2, 1, -4712)
+	assert jd.to_jcal_date() == jcal
+	assert jd.to_gcal_date() == gcal
+	assert jcal.to_gcal_date() == gcal
+	assert gcal.to_jcal_date() == jcal
 
 
 ulower, uupper = dc.DateTokenIndex.get_int_bounds()
