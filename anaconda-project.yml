@@ -33,7 +33,7 @@ commands:
   run-py-tests:
     unix: pytest tests/py -m "not slow"
   run-py-tests-cov:
-    unix: pytest tests/py -m "not slow" --cov datecalendar --cov-report xml
+    unix: pytest tests/py -m "not slow" --cov datecalendar --cov-report term-missing
   run-all-py-tests:
     unix: pytest tests/py
   run-all-sol-tests:
