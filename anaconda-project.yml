@@ -34,6 +34,12 @@ commands:
     unix: pytest tests/py -m "not slow"
   run-all-py-tests:
     unix: pytest tests/py
+  build-pypi:
+    unix: python setup.py sdist bdist_wheel & twine check dist/*
+  upload-pypi-test:
+    unix: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+  upload-pypi:
+    unix: twine upload dist/*
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -89,6 +95,7 @@ env_specs:
     - jupyter
     - nodejs=16.13.1 #LTS version
     - spiceypy
+    - twine
     - pip: 
       - eth-brownie
       - jdcal

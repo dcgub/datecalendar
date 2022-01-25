@@ -1,6 +1,9 @@
 `Date Calendar <https://github.com/dcgub/datecalendar>`__
 =========================================================
 
+.. image:: https://img.shields.io/pypi/v/datecalendar.svg
+        :target: https://pypi.python.org/pypi/datecalendar
+
 Date Calendar is a uniquely generated calendar where each date's proof of ownership is stored on the Ethereum blockchain. This `repo <https://github.com/dcgub/datecalendar>`__ contains 
 
 #. The DateCalendar.sol smart contract

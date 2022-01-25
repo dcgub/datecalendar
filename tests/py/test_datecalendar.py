@@ -353,7 +353,7 @@ def test_large_gcal_generation(upper_year, lower_year):
 		dti = dc.DateTokenIndex(i)
 		jd = dti.to_jd()
 		dt = jd.to_gcal_date()
-		all_dates.add(dt)
+		all_dates.add(tuple(dt))
 		dates_by_year[dt.year].append(dt)
 
 	assert len(all_dates) == sum(len(v) for v in dates_by_year.values())
