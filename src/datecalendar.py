@@ -499,7 +499,7 @@ class GCalDate(CalendarDate):
         a = self.year % 4
         b = self.year % 100
         c = self.year % 400
-        return not a and (b or not c)
+        return not a and (bool(b) or not c)
 
 
 class JCalDate(CalendarDate):
